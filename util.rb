@@ -76,8 +76,7 @@ begin
         guest_used_memory_total = hypervisors[node]['kvm']['guest_usedmemory_total']
         guests = hypervisors[node]['kvm']['guests']
 
-        #60.times { print "-" }
-        puts
+        puts # blank line
         puts "Host: #{hypervisor_name}"
         puts "Host Mem: #{hyp_mem}"
         puts "Host Cores: #{hyp_cores}"
@@ -91,16 +90,17 @@ begin
             max_mem = hypervisors[node]['kvm']['guests'][instance]['Max memory']
             used_mem = hypervisors[node]['kvm']['guests'][instance]['Used memory']
             cores = hypervisors[node]['kvm']['guests'][instance]['CPU(s)']
+            state = hypervisors[node]['kvm']['guests'][instance]['state']
 
-            printf "%-10s %-20s %-2s %15s %15s\n", "", instance, cores, max_mem, used_mem 
+            printf "%-10s %-20s %-2s %15s %15s %10s\n", "", instance, cores, max_mem, used_mem, state
         end # guest.keys.each
 
-        puts
+        puts # blank line
         cores = guest_cpu_total.to_f / hyp_cores.to_f
         mem = (guest_maxmemory_total.split(" ", 2))[0].to_f / (hyp_mem.split(" ", 2))[0].to_f
         puts "Provisioning  CPU: #{(cores * 100).to_i}%  Memory: #{(mem * 100).to_i}%"
         60.times { print "-" }
-        puts
+        puts # blank line
       end # nodes.each
  # end # sinatra end
   
