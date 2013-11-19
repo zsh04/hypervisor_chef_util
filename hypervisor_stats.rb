@@ -32,21 +32,22 @@ class Options
         :short => "-p PEMFILE",
         :long => "--pem PEMFILE",
         :description => "Pem file to use when talking with the Chef API",
-        :required => true
-
+        :required => false
 
     option :chef_server_hostname,
         :short => "-H HOSTNAME",
         :long => "--host HOSTNAME",
         :description => "The hostname of the chef server",
-        :default => "chefserver.ops.nastygal.com"
+        :default => "chefserver.ops.nastygal.com",
+        :required => false
 
 
     option :chef_server_port,
         :short => "-p PORT",
         :long => "--port PORT",
         :description => "The port the chef server is listening on",
-        :default => "4000"
+        :default => "4000",
+        :required => false
 
 
     option :help,
@@ -124,8 +125,13 @@ begin
 
     # Required variables
     username    = options.config[:chef_username]
-    pemfile     = options.config[:pem_file]
     chefurl     = "http://#{options.config[:chef_server_hostname]}:#{options.config[:chef_server_port]}"
+
+    if options.config[:pem_file] == nil # the pem file may just be the username.pem
+        pemfile = "#{options.config[:chef_username]}.pem"
+    else
+        pemfile = options.config[:pem_file]
+    end
     
 
     # AUTH - connect to ChefServer with valid user and pemfile
