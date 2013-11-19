@@ -39,7 +39,7 @@ class Options
         :short => "-H HOSTNAME",
         :long => "--host HOSTNAME",
         :description => "The hostname of the chef server",
-        :default => "chef-server.ops.nastygal.com"
+        :default => "chefserver.ops.nastygal.com"
 
 
     option :chef_server_port,
@@ -123,9 +123,9 @@ begin
 
 
     # Required variables
-    username    = options.chef_username
-    pemfile     = options.pem_file
-    chefurl     = "http://#{options.chef_server_hostname}:#{options.chef_server_port}"
+    username    = options.config[:chef_username]
+    pemfile     = options.config[:pem_file]
+    chefurl     = "http://#{options.config[:chef_server_hostname]}:#{options.config[:chef_server_port]}"
     
 
     # AUTH - connect to ChefServer with valid user and pemfile
