@@ -1,9 +1,13 @@
+# This script queries the Chef server for nodes in the role[hypervisor] 
+# using the Chef API and a valid user name and .pem file.
+# It gathers information on any nodes, and displays stats
+# on the hypervisor itself and all guest of that hypervisor.
+
 #! env ruby
 require 'chef' 
 require 'chef/rest' 
 require 'chef/search/query' 
 require 'chef/node' 
-#require 'sinatra'
 require 'json'
 
 
@@ -18,7 +22,7 @@ class ChefClient
         Chef::Config[:client_key]=key
         Chef::Config[:chef_server_url]=url
     end
-end # end of class Chef::Config
+end 
 
 
 class NodeAttrs
@@ -77,12 +81,16 @@ begin
     guests = {}
 
     nodes.each do |node|
-            a = NodeAttrs.new(node)
+        a = NodeAttrs.new(node)
         stats = Stats.new
 
-        hypervisors[node]       = { 'kvm' => a.results['automatic']['virtualization']['kvm'] }
-        time_of_last_chef_run   = Time.at(a.results['automatic']['ohai_time'])
         hypervisor_name         = node
+        time_of_last_chef_run   = Time.at(a.results['automatic']['ohai_time'])
+
+        # Per node Hash
+        hypervisors[node]       = { 'kvm' => a.results['automatic']['virtualization']['kvm'] }
+
+        # Get specific stats from node
         hypervisor_memory       = hypervisors[node]['kvm']['hardware']['Memory size']
         hypervisor_memory_float = (hypervisor_memory.split(" ", 2))[0].to_f
         hypervisor_cores        = (hypervisors[node]['kvm']['hardware']['CPU(s)']).to_i
@@ -101,22 +109,24 @@ begin
         puts # blank line
         printf "%-10s %-17s %-9s %-15s %-14s %-20s\n", "Guests:", "Host", "Cores", "Max Memory", "Used Memory", "State"
 
-        guests.keys.each do |instance|
-            name           = instance
-            state          = hypervisors[node]['kvm']['guests'][instance]['state']
-            cores          = (hypervisors[node]['kvm']['guests'][instance]['CPU(s)']).to_i
-            used_mem       = hypervisors[node]['kvm']['guests'][instance]['Used memory']
-            max_mem_in_KiB = hypervisors[node]['kvm']['guests'][instance]['Max memory']
+        # Get specific stats for each guest on the node
+        guests.keys.each do |guest|
+            name           = guest
+            state          = hypervisors[node]['kvm']['guests'][guest]['state']
+            cores          = (hypervisors[node]['kvm']['guests'][guest]['CPU(s)']).to_i
+            used_mem       = hypervisors[node]['kvm']['guests'][guest]['Used memory']
+            max_mem_in_KiB = hypervisors[node]['kvm']['guests'][guest]['Max memory']
             mem_float      = (max_mem_in_KiB.split(" ", 2))[0].to_f 
 
-            if state == "running" # only include resources from running hosts
+            if state == "running" # only count resources from running guests
                 stats.add_to_core_count(cores)
                 stats.add_to_mem_total(mem_float)
             end
 
-            printf "%-10s %-20s %-2s %15s %15s %10s\n", "", instance, cores, max_mem_in_KiB, used_mem, state
+            printf "%-10s %-20s %-2s %15s %15s %10s\n", "", guest, cores, max_mem_in_KiB, used_mem, state
         end # guest.keys.each
 
+        # Calculate total core and memory usage 
         cores = stats.core_total.to_f / hypervisor_cores.to_f
         mem = stats.mem_total_in_KiB / hypervisor_memory_float
 
