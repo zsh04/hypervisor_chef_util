@@ -15,7 +15,49 @@ require 'chef/rest'
 require 'chef/search/query' 
 require 'chef/node' 
 require 'json'
+require 'mixlib/cli'
 
+class Options
+    include Mixlib::CLI
+
+
+    option :chef_username,
+        :short => "-u USERNAME",
+        :long => "--name USERNAME",
+        :description => "User to use when talking with the Chef API",
+        :required => true
+
+
+    option :pem_file,
+        :short => "-p PEMFILE",
+        :long => "--pem PEMFILE",
+        :description => "Pem file to use when talking with the Chef API",
+        :required => true
+
+
+    option :chef_server_hostname,
+        :short => "-H HOSTNAME",
+        :long => "--host HOSTNAME",
+        :description => "The hostname of the chef server",
+        :default => "chef-server.ops.nastygal.com"
+
+
+    option :chef_server_port,
+        :short => "-p PORT",
+        :long => "--port PORT",
+        :description => "The port the chef server is listening on",
+        :default => "4000"
+
+
+    option :help,
+        :long => "--help",
+        :short => "-h",
+        :description => "Show this message",
+        :on => :tail,
+        :show_options => true,
+        :boolean => true,
+        :exit => 0
+end
 
 class ChefClient
     attr_accessor :name, :key, :url
@@ -44,6 +86,7 @@ class NodeQuery
     def initialize(url)
         @var = Chef::Search::Query.new(url)
     end
+
     def search(query)
         nodes = []
         results = @var.search('node', query)
@@ -62,9 +105,11 @@ class Stats
         @core_total = 0
         @mem_total_in_KiB = 0
     end
+
     def add_to_core_count(cores)
         @core_total += cores 
     end
+
     def add_to_mem_total(memory_in_KiB)
         @mem_total_in_KiB += memory_in_KiB
     end
@@ -72,10 +117,15 @@ end
 
 
 begin
+    # Pull in the options
+    options = Options.new
+    options.parse_options
+
+
     # Required variables
-    username    = 'jroberts'
-    pemfile     = 'jroberts.pem'
-    chefurl     = 'http://chefserver.ops.nastygal.com:4000'
+    username    = options.chef_username
+    pemfile     = options.pem_file
+    chefurl     = "http://#{options.chef_server_hostname}:#{options.chef_server_port}"
     
 
     # AUTH - connect to ChefServer with valid user and pemfile
