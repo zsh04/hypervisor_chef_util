@@ -34,6 +34,7 @@ class Options
         :description => "Pem file to use when talking with the Chef API",
         :required => false
 
+
     option :chef_server_hostname,
         :short => "-H HOSTNAME",
         :long => "--host HOSTNAME",
@@ -47,6 +48,13 @@ class Options
         :long => "--port PORT",
         :description => "The port the chef server is listening on",
         :default => "4000",
+        :required => false
+
+
+    option :hypervisor,
+        :short => "-h CHEFNODENAME",
+        :long => "--hypervisor CHEFNODENAME",
+        :description => "Get stats on a single hypervisor using the Chef node name",
         :required => false
 
 
@@ -140,8 +148,13 @@ begin
 
     # SEARCH - get array of nodes based on search
     q = NodeQuery.new(credentials.url)
-    nodes = q.search('role:hypervisor')
 
+    if options.config[:hypervisor] == nil
+        nodes = q.search('role:hypervisor')
+    else
+        nodes = []
+        nodes << options.config[:hypervisor]
+    end
 
     hypervisors = {}
     guests = {}
