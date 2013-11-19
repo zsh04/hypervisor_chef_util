@@ -3,6 +3,8 @@
 # It gathers information on any nodes, and displays stats
 # on the hypervisor itself and all guests of that hypervisor.
 #
+# There is a Gemfile. Use bundler to install all dependencies.
+#
 # NOTE: This script requires that the KVM plugin be installed into 
 # Ohai on each hypervisor. Chef only gets updated stats after a 
 # successful chef-client run.
