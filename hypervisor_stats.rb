@@ -214,4 +214,8 @@ begin
         puts # blank line
 
     end # nodes.each
+
+rescue => e
+    puts e.message
+
 end # end of begin
