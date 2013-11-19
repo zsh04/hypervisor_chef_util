@@ -224,7 +224,7 @@ begin
 
 
         puts # blank line
-        puts "Provisioning Stats - Cores: #{(cores * 100).to_i}%  Memory: #{(mem * 100).to_i}%"
+        puts "Resource Statistics - Cores: #{(cores * 100).to_i}%  Memory: #{(mem * 100).to_i}%"
         60.times { print "-" }
         puts # blank line
 
