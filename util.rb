@@ -3,7 +3,7 @@ require 'chef'
 require 'chef/rest' 
 require 'chef/search/query' 
 require 'chef/node' 
-require 'sinatra'
+#require 'sinatra'
 require 'json'
 
 
@@ -47,30 +47,62 @@ end
 
 
 begin
-  # Required variables
-  username    = 'jroberts'
-  pemfile     = 'jroberts.pem'
-  chefurl     = 'http://chefserver.ops.nastygal.com:4000'
-  set :bind, '0.0.0.0' # IP Sinatra should bind to 
+      # Required variables
+      username    = 'jroberts'
+      pemfile     = 'jroberts.pem'
+      chefurl     = 'http://chefserver.ops.nastygal.com:4000'
+      #set :bind, '0.0.0.0' # IP Sinatra should bind to 
+      
+  #get '/' do 
+      # AUTH - connect to ChefServer with valid user and pemfile
+      credentials = ChefClient.new(username, pemfile, chefurl)
+
+      # SEARCH - get array of nodes based on search
+      q = NodeQuery.new(credentials.url)
+      nodes = q.search('role:hypervisor')
+
+      # NODES - get per node attrs and create a hash key for each node
+      hypervisors = {}
+      guests = {}
+      nodes.each do |node|
+        a = NodeAttrs.new(node)
+
+        hypervisors[node] =  { 'kvm' => a.results['automatic']['virtualization']['kvm'] }
+        hypervisor_name = node
+        hyp_mem = hypervisors[node]['kvm']['hardware']['Memory size']
+        hyp_cores = hypervisors[node]['kvm']['hardware']['CPU(s)']
+        guest_cpu_total = hypervisors[node]['kvm']['guest_cpu_total']
+        guest_maxmemory_total = hypervisors[node]['kvm']['guest_maxmemory_total']
+        guest_used_memory_total = hypervisors[node]['kvm']['guest_usedmemory_total']
+        guests = hypervisors[node]['kvm']['guests']
+
+        #60.times { print "-" }
+        puts
+        puts "Host: #{hypervisor_name}"
+        puts "Host Mem: #{hyp_mem}"
+        puts "Host Cores: #{hyp_cores}"
+        puts "Guest CPU Total: #{guest_cpu_total}" 
+        puts "Guest Max Mem Total: #{guest_maxmemory_total}"
+        puts "Guest Used Mem Total: #{guest_used_memory_total}"
+        puts "Guests:"
+
+        guests.keys.each do |instance|
+            name = instance
+            max_mem = hypervisors[node]['kvm']['guests'][instance]['Max memory']
+            used_mem = hypervisors[node]['kvm']['guests'][instance]['Used memory']
+            cores = hypervisors[node]['kvm']['guests'][instance]['CPU(s)']
+
+            printf "%-10s %-20s %-2s %15s %15s\n", "", instance, cores, max_mem, used_mem 
+        end # guest.keys.each
+
+        puts
+        cores = guest_cpu_total.to_f / hyp_cores.to_f
+        mem = (guest_maxmemory_total.split(" ", 2))[0].to_f / (hyp_mem.split(" ", 2))[0].to_f
+        puts "Provisioning  CPU: #{(cores * 100).to_i}%  Memory: #{(mem * 100).to_i}%"
+        60.times { print "-" }
+        puts
+      end # nodes.each
+ # end # sinatra end
   
-  # AUTH - connect to ChefServer with valid user and pemfile
-  credentials = ChefClient.new(username, pemfile, chefurl)
 
-  # SEARCH - get array of nodes based on search
-  q = NodeQuery.new(credentials.url)
-  nodes = q.search('role:hypervisor')
-
-  # NODES - get per node attrs and create a hash key for each node
-  hypervisors = {}
-  nodes.each do |node|
-    a = NodeAttrs.new(node)
-    hypervisors[node] =  { 'kvm' => a.results['automatic']['virtualization']['kvm'] }
-
-    # Sinatra - make the json available via http://0.0.0.0:4567
-    get "/#{node}" do
-      content_type :json
-      hypervisors[node].to_json
-    end
-  end
-
-end # begin
+end # end of begin
